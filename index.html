@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#fafaf8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>L_coco_chatAI</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/fontawesome.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/solid.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+</head>
+<body data-theme="cute">
+
+<div class="app">
+  <!-- Unified Header -->
+  <div class="header">
+    <!-- Cute theme: save selector (left) -->
+    <div class="hdr-cute-left" style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
+      <select class="save-bar-select" id="saveSel2" onchange="switchSave(this.value)"></select>
+    </div>
+    <!-- Cute theme: buttons (right) -->
+    <div class="hdr-cute-right" style="display:flex;align-items:center;gap:8px">
+      <button class="top-bar-btn" onclick="openNewSaveModal()" title="新建"><i class="fas fa-plus"></i></button>
+      <div style="position:relative">
+        <button class="top-bar-btn" onclick="toggleCuteMenu()" title="菜单"><i class="fas fa-ellipsis-h"></i></button>
+        <div class="cute-menu" id="cuteMenu">
+          <div class="cute-menu-item" onclick="closeCuteMenu();openGlobalSettings()"><i class="fas fa-cog"></i> 模型设置</div>
+          <div class="cute-menu-item" onclick="closeCuteMenu();openUsageStats()"><i class="fas fa-chart-bar"></i> 用量统计</div>
+          <div class="cute-menu-item" onclick="closeCuteMenu();openGlobalRules()"><i class="fas fa-scroll"></i> 底层规则</div>
+          <div class="cute-menu-item" onclick="closeCuteMenu();openDiaryStats()"><i class="fas fa-book-open"></i> 日记统计</div>
+          <div class="cute-menu-item" onclick="closeCuteMenu();toggleTheme()"><i class="fas fa-exchange-alt"></i> 切换主题</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- WeChat theme header (separate, shown via JS when switching theme) -->
+  <div class="header hdr-wc-header" style="display:none">
+    <div class="hdr-wc-left" style="display:flex;flex-direction:column;gap:2px">
+      <div class="logo" id="logoText">💕 My Companion</div>
+      <div class="clock" id="clock"></div>
+    </div>
+    <div class="hdr-wc-right" style="display:flex;gap:8px;align-items:center">
+      <button class="theme-btn" onclick="toggleTheme()" title="切换主题" id="themeBtn">💬</button>
+      <button class="icon-btn" onclick="openGlobalRules()" title="底层规则"><i class="fas fa-scroll"></i></button>
+      <button class="icon-btn" onclick="openGlobalSettings()" title="设置"><i class="fas fa-cog"></i></button>
+      <button class="wc-hdr-btn" onclick="openNewSaveModal()" title="新建"><i class="fas fa-plus"></i></button>
+      <div style="position:relative" class="wc-hdr-menu-wrap">
+        <button class="wc-hdr-btn" onclick="toggleWcHdrMenu()" title="菜单"><i class="fas fa-bars"></i></button>
+        <div class="wc-menu" id="wcHdrMenu">
+          <div class="wc-menu-item" onclick="closeWcHdrMenu();openGlobalSettings()"><i class="fas fa-cog"></i> 模型设置</div>
+          <div class="wc-menu-item" onclick="closeWcHdrMenu();openUsageStats()"><i class="fas fa-chart-bar"></i> 用量统计</div>
+          <div class="wc-menu-item" onclick="closeWcHdrMenu();openGlobalRules()"><i class="fas fa-scroll"></i> 底层规则</div>
+          <div class="wc-menu-item" onclick="closeWcHdrMenu();openDiaryStats()"><i class="fas fa-book-open"></i> 日记统计</div>
+          <div class="wc-menu-item" onclick="closeWcHdrMenu();toggleTheme()"><i class="fas fa-exchange-alt"></i> 切换主题</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="save-bar">
+    <select id="saveSel" onchange="switchSave(this.value)"></select>
+    <button class="btn btn-primary btn-sm" onclick="openNewSaveModal()">+ 新建</button>
+    <button class="btn btn-ghost btn-sm" onclick="openSaveSettings()"><i class="fas fa-sliders-h"></i></button>
+  </div>
+
+  <!-- WeChat conversation list -->
+  <div class="wc-list" id="wcList"></div>
+
+  <div class="char-area">
+    <!-- Cute: character card -->
+    <div class="char-card" id="charCard">
+      <div class="char-card-img" id="charCardImg" onclick="$('avatarFileInput').click()"><div class="placeholder"><i class="fas fa-camera"></i><span>点击上传头像</span></div></div>
+      <div class="char-card-overlay">
+        <span class="char-card-name" id="nameEl">新妹妹</span>
+        <span class="char-card-stats" id="statsEl"></span>
+      </div>
+    </div>
+    <div class="char-tags" id="tagsEl"></div>
+    <!-- WeChat compat: old elements (hidden in cute via CSS) -->
+    <div class="avatar-wrap" style="display:none">
+      <div class="avatar-ring"></div>
+      <div class="avatar" id="avatarEl">
+        <span class="face">👧</span>
+        <div class="blush-l"></div>
+        <div class="blush-r"></div>
+      </div>
+    </div>
+    <div class="mood-bubble" id="moodEl" style="display:none"></div>
+    <div id="compIndicator" style="display:none;margin-top:6px;font-size:11px;color:var(--text3);opacity:0.6">💕 陪伴模式进行中</div>
+  </div>
+
+  <div class="bottom-area">
+    <!-- Cute: new func bar -->
+    <div class="func-bar">
+      <button class="func-btn" onclick="openDiaryModal()">📔 日记</button>
+      <button class="func-btn" id="compBtn" onclick="openCompPanel()">
+        <span id="compIcon">💤</span><span id="compTxt">陪伴关</span>
+      </button>
+    </div>
+    <!-- WeChat: old actions -->
+    <div class="actions">
+      <button class="act-pill diary" onclick="openDiaryModal()">📔 日记</button>
+    </div>
+    <div class="chat-bar">
+      <button class="bubble-btn" onclick="handleBubble()" title="AI主动聊天">
+        💬
+        <span class="notif" id="notifDot"></span>
+      </button>
+      <input type="text" id="chatInput" placeholder="说点什么..." onkeydown="if(event.key==='Enter')sendFromBar()"/>
+      <button class="chat-continue-btn" onclick="handleContinue()" title="让AI继续说">🗣️</button>
+      <button class="send" onclick="sendFromBar()"><i class="fas fa-paper-plane"></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- Chat Panel -->
+<div class="chat-panel" id="chatPanel">
+  <div class="chat-hd">
+    <button class="close-btn" onclick="closeChat()"><i class="fas fa-times close-icon-cute"></i><i class="fas fa-arrow-left close-icon-wc"></i></button>
+    <h2 id="chatTitle" class="chat-title-center">聊天</h2>
+    <div style="display:flex;gap:6px;align-items:center">
+      <div style="position:relative">
+      <button class="icon-btn wc-hd-more" onclick="toggleWcMenu()" title="更多"><i class="fas fa-ellipsis-v"></i></button>
+      <div class="wc-menu" id="wcMenu">
+        <div class="wc-menu-item" onclick="closeWcMenu();openSummaryModal()"><i class="fas fa-compress-alt"></i> 对话摘要</div>
+        <div class="wc-menu-item" onclick="closeWcMenu();openSaveSettings()"><i class="fas fa-cog"></i> 存档设置</div>
+        <div class="wc-menu-item" id="wcMenuPin" onclick="closeWcMenu();togglePinSave()"><i class="fas fa-thumbtack"></i> 置顶存档</div>
+        <div class="wc-menu-item" onclick="closeWcMenu();openDiaryModal()"><i class="fas fa-book"></i> 日记</div>
+        <div class="wc-menu-item" onclick="closeWcMenu();openCompPanel()"><i class="fas fa-heart"></i> 陪伴设置</div>
+        <div class="wc-menu-item wc-menu-del" id="wcClearBtn" onclick="clearChatHistory()"><i class="fas fa-eraser"></i> 清空聊天记录</div>
+        <div class="wc-menu-item wc-menu-del" id="wcDelBtn" onclick="wcDeleteSave()"><i class="fas fa-trash"></i> 删除存档</div>
+      </div>
+    </div>
+    </div>
+  </div>
+  <div class="chat-msgs" id="chatMsgs"></div>
+  <div class="stat-deltas" id="statDeltas"></div>
+  <!-- Summary status -->
+  <div class="summary-bar" id="summaryBar" style="display:none" onclick="toggleSummaryContent()">
+    <span class="sum-icon" id="summaryIcon">📝</span>
+    <span class="sum-text" id="summaryText">对话摘要</span>
+    <span class="sum-toggle" id="summaryToggle">▼</span>
+  </div>
+  <div class="summary-content" id="summaryContent"></div>
+  <div class="chat-in">
+    <button class="chat-bubble-btn" onclick="handleBubble()" title="AI 打招呼">💬</button>
+    <input type="text" id="chatPanelInput" placeholder="说点什么..." onkeydown="if(event.key==='Enter')sendMsg()"/>
+    <button class="chat-continue-btn" id="continueBtn" onclick="handleContinue()" title="让AI继续说">🗣️</button>
+    <button class="send" onclick="sendMsg()"><i class="fas fa-paper-plane"></i></button>
+  </div>
+</div>
+
+<!-- New Save -->
+<div class="modal-bg" id="newSaveModal">
+  <div class="modal">
+    <div class="modal-hd"><h3>✨ 新建角色</h3><button class="close-btn" onclick="closeModal('newSaveModal')"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd">
+      <!-- Mode Toggle -->
+      <div class="ns-tabs">
+        <button class="ns-tab on" id="nsQuickTab" onclick="switchNsMode('quick')">⚡ 快速建角色</button>
+        <button class="ns-tab" id="nsCustomTab" onclick="switchNsMode('custom')">🛠️ 自定义建角色</button>
+      </div>
+      <!-- AI Generate (shared) -->
+      <div class="fg"><label>🎭 AI 一键生成人设</label>
+        <div style="display:flex;gap:8px;">
+          <input id="nsAiPrompt" placeholder="输入角色描述，如：傲娇猫娘、温柔学姐、病娇青梅竹马..." style="flex:1">
+          <button class="btn btn-primary btn-sm" onclick="nsAiGenerate(event)"><i class="fas fa-magic"></i> 生成</button>
+        </div>
+        <div class="hint">AI 自动生成完整人设（名称、性格、外貌、场景、初始状态）</div>
+        <div class="api-result" id="nsGenRes"></div>
+      </div>
+      <hr style="border:none;border-top:1px solid rgba(0,0,0,0.05);margin:14px 0">
+      <!-- Quick Mode Fields -->
+      <div id="nsQuickFields">
+        <div class="fg"><label>角色名 *</label><input id="nsName" placeholder="例如：Yuki、小雪"></div>
+        <div class="fg"><label>关系类型</label>
+          <select id="nsRelation" style="width:100%;padding:10px 14px;border-radius:12px;border:1.5px solid rgba(0,0,0,0.06);font-size:14px;font-family:inherit;background:#f8f9fa">
+            <option value="new">刚认识 — 好感低，需要慢慢培养</option>
+            <option value="friend">朋友 — 好感中等，自然相处</option>
+            <option value="close" selected>亲密 — 好感较高，关系亲近</option>
+            <option value="childhood">青梅竹马 — 好感很高，彼此了解</option>
+          </select>
+        </div>
+        <div class="fg"><label>用户性别</label>
+          <select id="nsUserGender" style="width:100%;padding:10px 14px;border-radius:12px;border:1.5px solid rgba(0,0,0,0.06);font-size:14px;font-family:inherit;background:#f8f9fa">
+            <option value="male">男（AI 用"他"称呼用户）</option>
+            <option value="female">女（AI 用"她"称呼用户）</option>
+            <option value="" selected>不指定</option>
+          </select>
+        </div>
+        <div class="fg"><label>角色描述</label><textarea id="nsDesc" rows="2" placeholder="外貌、性格、喜好、说话习惯..."></textarea></div>
+        <div class="fg"><label>标签（回车添加）</label>
+          <div class="tags-box" id="nsTagsBox" onclick="document.getElementById('nsTagIn').focus()">
+            <input id="nsTagIn" placeholder="输入标签..." onkeydown="if(event.key==='Enter'){event.preventDefault();addNsTag()}">
+          </div>
+        </div>
+      </div>
+      <!-- Custom Mode Fields -->
+      <div id="nsCustomFields" style="display:none">
+        <div class="fg"><label>角色名 *</label><input id="nsFullName" placeholder="例如：Yuki、小雪"></div>
+        <div class="fg"><label>关系类型</label>
+          <select id="nsFullRelation" style="width:100%;padding:10px 14px;border-radius:12px;border:1.5px solid rgba(0,0,0,0.06);font-size:14px;font-family:inherit;background:#f8f9fa">
+            <option value="new">刚认识 — 好感低，需要慢慢培养</option>
+            <option value="friend">朋友 — 好感中等，自然相处</option>
+            <option value="close" selected>亲密 — 好感较高，关系亲近</option>
+            <option value="childhood">青梅竹马 — 好感很高，彼此了解</option>
+          </select>
+        </div>
+        <div class="fg"><label>用户性别</label>
+          <select id="nsFullUserGender" style="width:100%;padding:10px 14px;border-radius:12px;border:1.5px solid rgba(0,0,0,0.06);font-size:14px;font-family:inherit;background:#f8f9fa">
+            <option value="male">男（AI 用"他"称呼用户）</option>
+            <option value="female">女（AI 用"她"称呼用户）</option>
+            <option value="" selected>不指定</option>
+          </select>
+        </div>
+        <div class="fg"><label>重点描述</label><textarea id="nsFullDesc" rows="3" placeholder="外貌、喜好、性格、对话要求..."></textarea><div class="hint">含动作描写、好感度变化、字数限制等</div></div>
+        <div class="fg"><label>性格特质</label><textarea id="nsFullPers" rows="2" placeholder="温柔体贴，偶尔傲娇..."></textarea></div>
+        <div class="fg"><label>演绎要求</label><textarea id="nsFullScen" rows="2" placeholder="行为、语言要求..."></textarea></div>
+        <div class="fg"><label>创作者说明</label><textarea id="nsFullNotes" rows="2" placeholder="补充提示词..."></textarea></div>
+        <div class="fg"><label>底层记忆（AI的身份认知）</label><textarea id="nsFullMem" rows="3" placeholder="我是谁、我要做什么、我和用户的关系..."></textarea><div class="hint">每次对话都会加载，定义AI的核心认知</div></div>
+        <div class="fg"><label>🎬 初始场景（第一次见面的背景）</label><textarea id="nsFullScene" rows="3" placeholder="例如：你和用户是同学，今天刚被分到同桌。你有点害羞，偷偷看了他好几眼才鼓起勇气打招呼。"></textarea></div>
+        <div class="fg"><label>标签（回车添加）</label>
+          <div class="tags-box" id="nsFullTagsBox" onclick="document.getElementById('nsFullTagIn').focus()">
+            <input id="nsFullTagIn" placeholder="输入标签..." onkeydown="if(event.key==='Enter'){event.preventDefault();addNsFullTag()}">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal('newSaveModal')">取消</button>
+      <button class="btn btn-primary" onclick="createSave()"><i class="fas fa-plus"></i> 创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- Global Settings -->
+<div class="modal-bg" id="globalModal">
+  <div class="modal">
+    <div class="modal-hd"><h3>⚙️ 模型设置</h3><button class="close-btn" onclick="closeModal('globalModal')"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd">
+      <!-- Saved Models -->
+      <div class="fg"><label>📋 已保存的模型</label>
+        <div id="modelList" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px"></div>
+        <div class="hint">点击快速切换，选中后自动加载配置</div>
+      </div>
+      <hr style="border:none;border-top:1px solid rgba(0,0,0,0.05);margin:12px 0">
+      <!-- Presets -->
+      <div class="fg"><label>🚀 快捷填充</label>
+        <div style="display:flex;gap:8px">
+          <select id="gPreset" onchange="applyPreset(this.value)" style="flex:1;padding:8px 14px;border-radius:10px;border:1.5px solid rgba(0,0,0,0.06);font-size:13px;font-family:inherit;background:#f8f9fa">
+            <option value="">-- 选择预设模板 --</option>
+            <option value="deepseek">DeepSeek</option>
+            <option value="kimi">Kimi (Moonshot)</option>
+            <option value="openai">OpenAI</option>
+            <option value="gemini">Google Gemini</option>
+            <option value="glm">智谱 GLM</option>
+            <option value="tongyi">通义千问</option>
+            <option value="claude">Claude（需代理）</option>
+            <option value="custom">自定义空白</option>
+          </select>
+        </div>
+      </div>
+      <!-- Config Fields -->
+      <div class="fg"><label>📝 模型备注（保存后显示的名称）</label><input id="gLabel" placeholder="例如：DeepSeek主力、Kimi备用、GPT-4..."></div>
+      <div class="fg"><label>API 地址</label><input id="gApi" placeholder="https://api.deepseek.com/v1/chat/completions"></div>
+      <div class="fg"><label>API Key</label><input id="gKey" type="text" placeholder="sk-..."></div>
+      <div class="fg">
+        <label>模型名称</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="gModel" placeholder="deepseek-chat" style="flex:1">
+          <button class="btn btn-ghost btn-sm" id="fetchModelsBtn" onclick="fetchModels()" style="white-space:nowrap;flex-shrink:0"><i class="fas fa-search"></i> 检测模型</button>
+        </div>
+        <select id="gModelSelect" style="display:none;width:100%;margin-top:6px;padding:8px 14px;border-radius:10px;border:1.5px solid rgba(0,0,0,0.06);font-size:13px;font-family:inherit;background:#f8f9fa" onchange="document.getElementById('gModel').value=this.value">
+          <option value="">-- 选择可用模型 --</option>
+        </select>
+      </div>
+      <div class="fg" style="display:flex;gap:10px">
+        <div style="flex:0.6"><label>Max Tokens</label><input id="gTok" type="number" placeholder="2048"></div>
+        <div style="flex:0.4"><label>Temperature</label><input id="gTemp" type="number" step="0.1" min="0" max="2" placeholder="0.7"></div>
+      </div>
+      <!-- Actions -->
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn btn-success btn-sm" id="testBtn" onclick="testAPI()"><i class="fas fa-vial"></i> 测试连接</button>
+        <button class="btn btn-primary btn-sm" onclick="saveModel()"><i class="fas fa-save"></i> 保存配置</button>
+        <button class="btn btn-ghost btn-sm" onclick="saveAsNewModel()"><i class="fas fa-plus"></i> 另存为新</button>
+        <button class="btn btn-danger btn-sm" id="delModelBtn" onclick="deleteModel()" style="display:none"><i class="fas fa-trash"></i> 删除</button>
+      </div>
+      <div class="api-result" id="testRes" style="margin-top:8px"></div>
+      <div style="margin-top:12px;background:linear-gradient(135deg,rgba(255,212,229,0.12),rgba(223,230,253,0.12));padding:10px 14px;border-radius:10px">
+        <div style="font-size:11px;color:var(--text3);line-height:1.6">
+          💡 支持所有兼容 OpenAI Chat Completions API 的模型<br>
+          🔑 API Key 仅保存在本地浏览器，不会上传到任何服务器
+        </div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal('globalModal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Global Rules -->
+<div class="modal-bg" id="globalRulesModal">
+  <div class="modal">
+    <div class="modal-hd"><h3>📜 底层规则</h3><button class="close-btn" onclick="closeModal('globalRulesModal')"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd">
+      <div style="background:linear-gradient(135deg,rgba(0,0,0,0.04),rgba(0,0,0,0.04));padding:12px 14px;border-radius:10px;margin-bottom:14px">
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">
+          ⚡ <b>底层规则优先级高于一切</b>，包括人设、场景、状态。<br>
+          这里的规则会影响所有存档的 AI 回复行为。<br>
+          用于制定全局行为准则、禁用某些表达方式、调整回复风格等。
+        </div>
+      </div>
+      <div class="fg">
+        <textarea id="gRules" rows="18" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid rgba(0,0,0,0.06);font-size:13px;font-family:'Noto Sans SC',monospace;resize:vertical;line-height:1.7;background:#fafafa" placeholder="输入底层规则..."></textarea>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="resetGlobalRules()" style="margin-top:4px"><i class="fas fa-undo"></i> 恢复默认规则</button>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal('globalRulesModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveGlobalRulesModal()"><i class="fas fa-save"></i> 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Companion Settings -->
+<div class="modal-bg" id="compSettingsModal">
+  <div class="modal">
+    <div class="modal-hd"><h3>💬 陪伴设置</h3><button class="close-btn" onclick="closeModal('compSettingsModal')"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd">
+      <!-- Toggle switch -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding:12px 14px;background:#fafafa;border-radius:12px;">
+        <label style="font-size:14px;font-weight:600">💕 陪伴模式</label>
+        <label class="comp-toggle">
+          <input type="checkbox" id="compToggle" onchange="toggleComp()">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(0,0,0,0.04),rgba(0,0,0,0.04));padding:12px 14px;border-radius:10px;margin-bottom:14px">
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">
+          💕 陪伴模式开启后，AI 会按设定频率主动给你发消息。<br>
+          ⏱️ 回复频率为随机值，每次发送后有冷却时间。<br>
+          📖 读取顺序：底层规则 → 人设 → 情绪状态 → 陪伴规则 → 日记/聊天记录。<br>
+          🔴 未读消息会在聊天列表显示红点提醒。
+        </div>
+      </div>
+      <!-- Frequency -->
+      <div class="fg"><label>⏱️ 回复频率</label>
+        <div class="freq-row">
+          <span>每</span>
+          <input id="compInterval" type="number" min="1" max="120" placeholder="10">
+          <span>分钟发</span>
+          <input id="compMsgMin" type="number" min="1" max="20" placeholder="2">
+          <span>~</span>
+          <input id="compMsgMax" type="number" min="1" max="20" placeholder="4">
+          <span>条</span>
+        </div>
+        <div class="hint">例：每10分钟发2-4条，实际间隔会随机波动</div>
+      </div>
+      <!-- Cooldown -->
+      <div class="fg"><label>❄️ 发送后冷却时间（秒）</label>
+        <input id="compCooldown" type="number" min="10" max="600" placeholder="60" style="width:120px">
+        <div class="hint">每条消息发送后的最短等待时间</div>
+      </div>
+      <!-- Scope -->
+      <div class="fg"><label>📝 陪伴模式规则（发消息时会读取）</label>
+        <div style="display:flex;gap:8px;margin-bottom:6px">
+          <button class="btn btn-primary btn-sm" id="compGenBtn" onclick="genCompRules()"><i class="fas fa-magic"></i> AI 根据人设生成</button>
+        </div>
+        <div class="api-result" id="compGenRes"></div>
+        <textarea id="compScope" rows="6" placeholder="例如：关心用户日常、分享有趣见闻、撒娇卖萌、回忆之前聊过的话题、读取最近日记来关心用户..."></textarea>
+        <div class="hint">AI 发陪伴消息时会优先读取这些规则，可包含"读取日记""读取聊天记录"等指令</div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal('compSettingsModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveCompSettings()"><i class="fas fa-save"></i> 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Save Settings -->
+<div class="modal-bg" id="saveModal">
+  <div class="modal">
+    <div class="modal-hd"><h3>🎀 存档设置</h3><button class="close-btn" onclick="closeModal('saveModal')"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd">
+      <div class="avatar-upload">
+        <div class="avatar-preview" id="avatarPreview">👧</div>
+        <div class="avatar-actions">
+          <button class="btn btn-ghost btn-sm" onclick="$('avatarFileInput').click()">📷 更换头像</button>
+          <button class="btn btn-ghost btn-sm" id="removeAvatarBtn" onclick="removeAvatar()" style="display:none">移除头像</button>
+          <input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="handleAvatarUpload(event)">
+        </div>
+      </div>
+      <div class="fg"><label>🎭 AI 一键生成人设</label>
+        <div style="display:flex;gap:8px;">
+          <input id="pAiPrompt" placeholder="输入角色大致描述，如：傲娇猫娘、病娇学姐、温柔青梅竹马..." style="flex:1">
+          <button class="btn btn-primary btn-sm" id="genBtn" onclick="generatePersona()"><i class="fas fa-magic"></i> 生成</button>
+        </div>
+        <div class="hint">输入你想要的角色类型/背景，AI 自动填入下面所有字段</div>
+        <div class="api-result" id="genRes"></div>
+      </div>
+      <hr style="border:none;border-top:1px solid rgba(0,0,0,0.05);margin:14px 0">
+      <div class="fg"><label>姓名</label><input id="pName" placeholder="Yuki"></div>
+      <div class="fg"><label>用户性别</label>
+        <select id="pUserGender" style="width:100%;padding:10px 14px;border-radius:12px;border:1.5px solid rgba(0,0,0,0.06);font-size:14px;font-family:inherit;background:#f8f9fa">
+          <option value="male">男（AI 用"他"称呼用户）</option>
+          <option value="female">女（AI 用"她"称呼用户）</option>
+          <option value="" selected>不指定</option>
+        </select>
+      </div>
+      <div class="fg"><label>重点描述</label><textarea id="pDesc" rows="3" placeholder="外貌、喜好、性格、对话要求..."></textarea><div class="hint">含动作描写、好感度变化、字数限制等</div></div>
+      <div class="fg"><label>性格特质</label><textarea id="pPers" rows="2" placeholder="温柔体贴，偶尔傲娇..."></textarea></div>
+      <div class="fg"><label>演绎要求</label><textarea id="pScen" rows="2" placeholder="行为、语言要求..."></textarea></div>
+      <div class="fg"><label>创作者说明</label><textarea id="pNotes" rows="2" placeholder="补充提示词..."></textarea></div>
+      <div class="fg"><label>底层记忆（AI的身份认知）</label><textarea id="pMem" rows="3" placeholder="我是谁、我要做什么、我和用户的关系..."></textarea><div class="hint">每次对话都会加载，定义AI的核心认知</div></div>
+      <div class="fg"><label>🎬 初始场景（第一次见面的背景）</label><textarea id="pScene" rows="3" placeholder="例如：你和用户是同学，今天刚被分到同桌。你有点害羞，偷偷看了他好几眼才鼓起勇气打招呼。"></textarea><div class="hint">定义角色与用户初识的场景和方式，AI开场时会参考这个场景</div></div>
+      <div class="fg"><label>标签（回车添加）</label>
+        <div class="tags-box" id="tagsBox" onclick="document.getElementById('tagIn').focus()">
+          <input id="tagIn" placeholder="输入标签..." onkeydown="if(event.key==='Enter'){event.preventDefault();addTag()}">
+        </div>
+      </div>
+      <hr style="border:none;border-top:1px solid rgba(0,0,0,0.05);margin:14px 0">
+      <!-- 性格行为类型 -->
+      <div class="fg"><label>🎭 陪伴消息性格类型（决定主动发消息的风格）</label>
+        <div id="behaviorTypesBox" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px"></div>
+        <div class="hint">可多选，陪伴消息会从选中的类型中随机选取风格方向</div>
+      </div>
+      <!-- 说话风格 -->
+      <div class="fg"><label>🗣️ 说话风格补充（可选）</label>
+        <input id="pSpeechStyle" placeholder="例如：句尾爱加'呢'、喜欢用反问、话很少">
+        <div class="hint">注入 prompt，让 AI 的说话方式更符合角色特征</div>
+      </div>
+      <!-- 情绪 emoji 开关 -->
+      <div class="tgl-row">
+        <label>😊 显示情绪 emoji</label>
+        <label class="tgl"><input type="checkbox" id="pMoodEmoji"><span class="sl"></span></label>
+      </div>
+      <hr style="border:none;border-top:1px solid rgba(0,0,0,0.05);margin:14px 0">
+      <button class="btn btn-ghost" style="width:100%;justify-content:center;padding:12px;margin-top:6px" onclick="closeModal('saveModal');openStatsModal()"><i class="fas fa-chart-bar"></i> 📊 状态管理（好感/信任/自定义状态）</button>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="btn btn-ghost btn-sm" style="flex:1" onclick="exportSave()"><i class="fas fa-download"></i> 导出</button>
+        <button class="btn btn-ghost btn-sm" style="flex:1" onclick="$('impFile').click()"><i class="fas fa-upload"></i> 导入</button>
+        <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openDiaryModal();closeModal('saveModal')"><i class="fas fa-book"></i> 日记</button>
+        <input type="file" id="impFile" accept=".json" style="display:none" onchange="importSave(event)">
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-danger btn-sm" onclick="deleteSave()"><i class="fas fa-trash"></i> 删除</button>
+      <button class="btn btn-ghost" onclick="closeModal('saveModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveSaveSettings()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Summary Settings & View -->
+<div class="modal-bg" id="summaryModal">
+  <div class="modal">
+    <div class="modal-hd"><h3>📝 对话摘要</h3><button class="close-btn" onclick="closeModal('summaryModal')"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd">
+      <!-- Settings -->
+      <div class="fg">
+        <label>⚙️ 摘要触发阈值（消息条数）</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="smThreshold" type="number" min="10" max="200" placeholder="50" style="width:80px;padding:8px 12px;border-radius:12px;border:1.5px solid rgba(0,0,0,0.06);font-size:14px;text-align:center;font-family:inherit;background:#f8f9fa">
+          <span style="font-size:13px;color:var(--text3)">条后自动摘要（0=关闭）</span>
+        </div>
+        <div class="hint">超过此条数，AI 自动摘要前面的对话并截断，保留最近 20 条原文。同时自动提取长期记忆（关闭聊天时也会触发一次）。</div>
+      </div>
+      <div style="text-align:right;margin-bottom:14px">
+        <button class="btn btn-primary btn-sm" onclick="saveSummarySettings()"><i class="fas fa-save"></i> 保存设置</button>
+      </div>
+      <hr style="border:none;border-top:1px solid rgba(0,0,0,0.05);margin:10px 0">
+      <!-- Current Summary Content -->
+      <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+        <span>📄 当前摘要内容</span>
+        <button class="btn btn-ghost btn-sm" id="smEditBtn" onclick="toggleSummaryEdit()" style="font-size:11px;padding:4px 10px"><i class="fas fa-pen"></i> 编辑</button>
+      </div>
+      <div id="smContent" style="padding:12px 14px;background:#fafafa;border-radius:12px;font-size:13px;line-height:1.8;color:var(--text2);min-height:60px;white-space:pre-wrap;word-break:break-word">
+        <span style="color:var(--text3)">暂无摘要（对话未达阈值或尚未开始摘要）</span>
+      </div>
+      <textarea id="smEditArea" style="display:none;width:100%;min-height:120px;padding:12px 14px;border-radius:12px;border:1.5px solid var(--purple);font-size:13px;line-height:1.8;font-family:inherit;resize:vertical;background:#fff;box-sizing:border-box"></textarea>
+      <div class="hint" style="margin-top:6px">摘要由 AI 自动生成，用于压缩超出窗口的旧对话内容。每次摘要刷新后可在此查看。</div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal('summaryModal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Diary -->
+<div class="modal-bg" id="diaryModal">
+  <div class="modal">
+    <div class="modal-hd"><h3 id="diaryTitle">📔 日记 & 长期记忆</h3><button class="close-btn" onclick="closeModal('diaryModal')"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd">
+      <div class="ns-tabs" style="margin-bottom:14px">
+        <button class="ns-tab on" id="diaryTabBtn" onclick="switchDiaryTab('diary')">📔 日记</button>
+        <button class="ns-tab" id="ltmTabBtn" onclick="switchDiaryTab('ltm')">🧠 长期记忆</button>
+      </div>
+      <div id="diaryContent"></div>
+      <div id="ltmContent" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Add Stat Modal -->
+<div class="modal-bg" id="addStatModal">
+  <div class="modal">
+    <div class="modal-hd"><h3>📊 添加自定义状态</h3><button class="close-btn" onclick="closeModal('addStatModal')"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd">
+      <div class="fg"><label>状态标识（英文key）</label><input id="asKey" placeholder="例如：sanity, hunger, mood"></div>
+      <div class="fg"><label>显示名称</label><input id="asLabel" placeholder="例如：理智值、饥饿度、心情"></div>
+      <div class="fg"><label>Emoji 图标</label><input id="asEmoji" placeholder="例如：🧠" maxlength="4"></div>
+      <div style="display:flex;gap:10px">
+        <div class="fg" style="flex:1"><label>最小值</label><input id="asMin" type="number" value="0"></div>
+        <div class="fg" style="flex:1"><label>最大值</label><input id="asMax" type="number" value="100"></div>
+        <div class="fg" style="flex:1"><label>默认值</label><input id="asDefault" type="number" value="50"></div>
+      </div>
+      <div class="fg"><label>📊 每次变化幅度</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input id="asChangeMin" type="number" max="0" value="-5" style="width:70px;padding:8px 10px;border-radius:12px;border:1.5px solid rgba(0,0,0,0.06);font-size:14px;text-align:center;font-family:inherit;background:#f8f9fa">
+          <span style="font-size:13px;color:var(--text3)">到</span>
+          <input id="asChangeMax" type="number" min="0" value="5" style="width:70px;padding:8px 10px;border-radius:12px;border:1.5px solid rgba(0,0,0,0.06);font-size:14px;text-align:center;font-family:inherit;background:#f8f9fa">
+        </div>
+        <div class="hint">AI 每次调整该状态的最小/最大变化值。如 -5 到 +2 表示下降快上升慢</div>
+      </div>
+      <div class="fg"><label>区间行为描述（让 AI 知道不同数值该怎么表现）</label>
+        <textarea id="asThresholds" rows="3" placeholder="例如：高(80-100)冷静理性 | 中(40-80)正常 | 低(0-40)焦虑不安"></textarea>
+        <div class="hint">用 | 分隔不同区间，描述该数值下角色的行为/语气特征</div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);line-height:1.6;margin-top:6px">
+        💡 填写区间行为描述后，AI 会根据当前数值自动调整角色表现。
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal('addStatModal')">取消</button>
+      <button class="btn btn-primary" onclick="addNewStat()">添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- Usage Stats -->
+<div class="modal-bg" id="usageModal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-hd"><h3>📊 用量统计</h3><div style="display:flex;gap:8px;align-items:center"><button onclick="refreshUsageStats()" title="刷新数据" style="width:34px;height:34px;border:none;border-radius:50%;background:var(--card);box-shadow:var(--shadow);cursor:pointer;font-size:14px;color:var(--purple-deep);display:flex;align-items:center;justify-content:center;transition:0.3s var(--ease)"><i class="fas fa-sync-alt"></i></button><button class="close-btn" onclick="closeModal('usageModal')"><i class="fas fa-times"></i></button></div></div>
+    <div class="modal-bd" style="padding:14px 24px">
+      <!-- 顶部总消耗 -->
+      <div id="usageTopStats" style="text-align:center;margin-bottom:20px;padding:18px 16px;background:linear-gradient(135deg,rgba(255,133,162,0.08),rgba(196,167,255,0.08));border-radius:14px">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px">累计总消耗</div>
+        <div id="usageTopTotal" style="font-size:36px;font-weight:900;color:#1a1a1a;line-height:1.2">0</div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:4px">tokens</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px">💰 累计费用 ≈ ¥<span id="usageTopCostAll">0</span></div>
+        <div style="display:inline-flex;align-items:baseline;gap:16px;padding-top:10px;border-top:1px solid rgba(0,0,0,0.05)">
+          <div>
+            <span style="font-size:11px;color:var(--text3)">今日 </span>
+            <span id="usageTopToday" style="font-size:16px;font-weight:700;color:#333">0</span>
+            <span style="font-size:10px;color:var(--text3)"> tokens</span>
+          </div>
+          <div>
+            <span style="font-size:11px;color:var(--text3)">费用 </span>
+            <span id="usageTopCost" style="font-size:16px;font-weight:700;color:#333">≈ ¥0</span>
+          </div>
+        </div>
+      </div>
+      <!-- 角色排行（主视图） -->
+      <div id="usageRankMainView">
+        <div style="margin-bottom:20px">
+          <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px">🏆 角色消耗排行</div>
+          <div id="usageRankList"></div>
+          <div id="usageMoreBtnWrap" style="display:none;text-align:center;margin-top:10px">
+            <button class="btn btn-ghost btn-sm" onclick="showUsageFullRank()" style="font-size:12px;padding:6px 20px;border-radius:20px">
+              <i class="fas fa-list-ul" style="margin-right:4px"></i> 查看完整排行
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- 今日时段 -->
+      <div style="margin-bottom:12px;padding:12px 14px;background:#fafafa;border-radius:12px">
+        <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">⏰ 今日时段分布</div>
+        <div id="usageHourlyChart" style="height:140px;width:100%"></div>
+      </div>
+      <!-- 近7天 -->
+      <div style="margin-bottom:12px;padding:12px 14px;background:#fafafa;border-radius:12px">
+        <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">📈 近7天消耗趋势</div>
+        <div id="usageDailyChart" style="height:140px;width:100%"></div>
+      </div>
+      <!-- 汇总 -->
+      <div id="usageSummary" style="background:linear-gradient(135deg,rgba(255,212,229,0.12),rgba(223,230,253,0.12));padding:14px 16px;border-radius:12px;font-size:12px;color:var(--text2);line-height:1.8"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost btn-sm" onclick="clearUsageData()" style="font-size:11px"><i class="fas fa-trash"></i> 清空数据</button>
+      <button class="btn btn-ghost" onclick="closeModal('usageModal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Full Rank Modal -->
+<div class="modal-bg" id="fullRankModal">
+  <div class="modal" style="max-width:480px;max-height:75vh">
+    <div class="modal-hd"><h3>🏆 完整排行</h3><button class="close-btn" onclick="closeModal('fullRankModal')"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd">
+      <div id="usageFullRankList"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal('fullRankModal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Diary Stats Modal -->
+<div class="modal-bg" id="diaryStatsModal">
+  <div class="modal" style="max-width:480px;max-height:80vh">
+    <div class="modal-hd"><h3 id="diaryStatsTitle">📔 日记统计</h3><button class="close-btn" onclick="closeModal('diaryStatsModal')"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd" style="padding:14px 20px">
+      <div id="diaryStatsContent"></div>
+    </div>
+    <div class="modal-ft" id="diaryStatsFt">
+      <button class="btn btn-ghost" onclick="closeModal('diaryStatsModal')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Stats Management Modal -->
+<div class="modal-bg" id="statsModal">
+  <div class="modal">
+    <div class="modal-hd"><h3>📊 状态管理</h3><button class="close-btn" onclick="closeModal('statsModal')"><i class="fas fa-times"></i></button></div>
+    <div class="modal-bd">
+      <div id="statsListArea"></div>
+      <div style="margin-top:12px;text-align:center">
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('statsModal');openAddStatModal()"><i class="fas fa-plus"></i> 添加新状态</button>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal('statsModal');openSaveSettings()">返回</button>
+      <button class="btn btn-primary" onclick="saveStatsModal()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
