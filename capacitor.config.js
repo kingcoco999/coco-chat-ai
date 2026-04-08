@@ -1,18 +1,17 @@
 const config = {
   appId: 'com.coco.chatai',
   appName: 'Coco Chat AI',
-  webDir: '.',
+  webDir: 'www',
   server: {
     androidScheme: 'https',
     hostname: 'app.coco.chatai',
     allowNavigation: [
-      'https://api.deepseek.com/*',
-      'https://api.moonshot.cn/*',
-      'https://api.openai.com/*',
-      'https://generativelanguage.googleapis.com/*',
-      'https://open.bigmodel.cn/*',
-      'https://dashscope.aliyuncs.com/*',
-      'https://*.aliyuncs.com/*'
+      'https://api.deepseek.com',
+      'https://api.moonshot.cn',
+      'https://api.openai.com',
+      'https://generativelanguage.googleapis.com',
+      'https://open.bigmodel.cn',
+      'https://dashscope.aliyuncs.com'
     ]
   },
   android: {
