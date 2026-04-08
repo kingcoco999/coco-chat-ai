@@ -3,35 +3,10 @@ const config = {
   appName: 'Coco Chat AI',
   webDir: 'www',
   server: {
-    androidScheme: 'https',
-    hostname: 'app.coco.chatai',
-    allowNavigation: [
-      'https://api.deepseek.com',
-      'https://api.moonshot.cn',
-      'https://api.openai.com',
-      'https://generativelanguage.googleapis.com',
-      'https://open.bigmodel.cn',
-      'https://dashscope.aliyuncs.com'
-    ]
+    androidScheme: 'https'
   },
   android: {
-    allowMixedContent: true,
-    captureInput: true,
-    webViewLimitsNavigations: true,
-    backgroundColor: '#fafaf8'
-  },
-  plugins: {
-    SplashScreen: {
-      launchShowDuration: 0
-    },
-    StatusBar: {
-      style: 'light',
-      backgroundColor: '#fafaf8'
-    },
-    Keyboard: {
-      resize: 'body',
-      resizeOnFullScreen: true
-    }
+    allowMixedContent: true
   }
 };
 
