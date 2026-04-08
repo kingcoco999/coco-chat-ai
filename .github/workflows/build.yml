@@ -36,6 +36,10 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      # 👇 添加这一整段（这是关键）
+      - name: Install TypeScript
+        run: npm install -D typescript
+
       - name: Add Android platform
         run: |
           if [ ! -d "android" ]; then
