@@ -1,6 +1,4 @@
-import { CapacitorConfig } from '@capacitor/cli';
-
-const config: CapacitorConfig = {
+const config = {
   appId: 'com.coco.chatai',
   appName: 'Coco Chat AI',
   webDir: '.',
@@ -38,4 +36,4 @@ const config: CapacitorConfig = {
   }
 };
 
-export default config;
+module.exports = config;
